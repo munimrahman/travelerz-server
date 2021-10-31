@@ -20,6 +20,113 @@ async function run() {
         const database = client.db('travelerz');
         const productsCollection = database.collection('products');
         const usersCollection = database.collection('users');
+        const packagesCollection = database.collection('packages');
+        const ordersCollection = database.collection('orders');
+
+        // Get All PACKAGES Data
+        app.get('/packages', async (req, res) => {
+            const cursor = packagesCollection.find({});
+            const count = await cursor.count()
+            const page = req.query.page;
+            const size = parseInt(req.query.size);
+            let packages;
+            if (page) {
+                packages = await cursor.skip(page * size).limit(size).toArray();
+            }
+            else {
+                packages = await cursor.toArray();
+            }
+            res.send({
+                count,
+                packages
+            })
+        })
+
+        // Add a New Package
+        app.post('/packages', async (req, res) => {
+            const newPackage = req.body;
+            const result = await packagesCollection.insertOne(newPackage)
+            res.json(result)
+        })
+
+        // Find a PACKAGE By _id
+        app.get('/packages/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) }
+            const result = await packagesCollection.findOne(query)
+            res.json(result)
+        })
+
+        // Find PACKAGES byKeys For Cart
+        app.post('/packages/byKeys', async (req, res) => {
+            const keys = req.body;
+            const query = { key: { $in: keys } }
+            const packages = await packagesCollection.find(query).toArray()
+            res.json(packages)
+        })
+        // Get All ORDERS
+        app.get('/orders', async (req, res) => {
+            const cursor = ordersCollection.find({});
+            const count = await cursor.count()
+            const page = req.query.page;
+            const size = parseInt(req.query.size);
+            let orders;
+            if (page) {
+                orders = await cursor.skip(page * size).limit(size).toArray();
+            }
+            else {
+                orders = await cursor.toArray();
+            }
+            res.send({
+                count,
+                orders
+            })
+        })
+
+        // Add ORDERS API
+        app.post('/orders', async (req, res) => {
+            const order = req.body;
+            const result = await ordersCollection.insertOne(order)
+            res.json(result)
+        })
+        // Find a ORDER By _id
+        app.get('/orders/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) }
+            const result = await ordersCollection.findOne(query)
+            res.json(result)
+        })
+
+        // Find  ORDERS By email
+        // app.post('/orders', async (req, res) => {
+        //     const email = req.query.email;
+        //     const query = { email: email }
+        //     const result = await ordersCollection.find(query).toArray()
+        //     res.json(result)
+        // })
+
+        // Update Order by Admin || Confirm Order Status
+        app.put('/orders/:id', async (req, res) => {
+            const id = req.params.id;
+            const updateInfo = req.body;
+            const filter = { _id: ObjectId(id) }
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: {
+                    orderStatus: updateInfo.orderStatus
+                },
+            };
+            const result = await ordersCollection.updateOne(filter, updateDoc, options)
+            res.json(result);
+        })
+
+        // Delete a ORDER API For Admin
+        app.delete('/orders/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) }
+            const result = await ordersCollection.deleteOne(query);
+            res.json(result);
+        })
 
         // Get All PRODUCTS Data
         app.get('/products', async (req, res) => {
@@ -27,7 +134,7 @@ async function run() {
             const count = await cursor.count()
             const page = req.query.page;
             const size = parseInt(req.query.size);
-            console.log(page, size);
+            // console.log(page, size);
             let users;
             if (page) {
                 users = await cursor.skip(page * size).limit(size).toArray();
@@ -50,9 +157,17 @@ async function run() {
         })
         // Add a New PRODUCT
         app.post('/products', async (req, res) => {
-            const newUser = req.body;
-            const result = await productsCollection.insertOne(newUser)
+            const newProduct = req.body;
+            const result = await productsCollection.insertOne(newProduct)
             res.json(result)
+        })
+
+        // Get Products by Keys for CART
+        app.post('/products/byKeys', async (req, res) => {
+            const keys = req.body;
+            const query = { key: { $in: keys } }
+            const products = await productsCollection.find(query).toArray()
+            res.json(products)
         })
 
         // Get All USERS Data
@@ -61,7 +176,6 @@ async function run() {
             const count = await cursor.count()
             const page = req.query.page;
             const size = parseInt(req.query.size);
-            console.log(page, size);
             let users;
             if (page) {
                 users = await cursor.skip(page * size).limit(size).toArray();
@@ -76,11 +190,11 @@ async function run() {
         })
 
         // POST API || Create a Document to Insert
-        app.post('/users', async (req, res) => {
-            const newUser = req.body;
-            const result = await productsCollection.insertOne(newUser)
-            res.json(result)
-        })
+        // app.post('/users', async (req, res) => {
+        //     const newUser = req.body;
+        //     const result = await productsCollection.insertOne(newUser)
+        //     res.json(result)
+        // })
 
         // DELETE API
         app.delete('/users/:id', async (req, res) => {
