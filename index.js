@@ -64,12 +64,17 @@ async function run() {
             const packages = await packagesCollection.find(query).toArray()
             res.json(packages)
         })
-        // Get All ORDERS
+        // Get All ORDERS & Get Orders by Email
         app.get('/orders', async (req, res) => {
-            const cursor = ordersCollection.find({});
-            const count = await cursor.count()
+            let query = {};
             const page = req.query.page;
+            const email = req.query.email;
             const size = parseInt(req.query.size);
+            if (email) {
+                query = { email: email }
+            }
+            const cursor = ordersCollection.find(query);
+            const count = await cursor.count()
             let orders;
             if (page) {
                 orders = await cursor.skip(page * size).limit(size).toArray();
